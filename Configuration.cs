@@ -17,8 +17,5 @@ namespace CloneSession
 
         public bool AutoClone = false;
 
-        public bool Sandboxie = false;
-        public string SandboxiePath = @"C:\Program Files\Sandboxie-Plus\Start.exe";
-        public string SandboxieBox = string.Empty;
     }
 }

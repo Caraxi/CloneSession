@@ -107,23 +107,13 @@ namespace CloneSession
                         }
                         ImGui.EndCombo();
                     }
-
-
-                    hasChanged |= ImGui.Checkbox("Use Sandboxie", ref Config.Sandboxie);
-
-                    if (Config.Sandboxie) {
-                        ImGui.Indent();
-                        hasChanged |= ImGui.InputText("Sandboxie Path", ref Config.SandboxiePath, 512);
-                        hasChanged |= ImGui.InputText("Sandboxie Box", ref Config.SandboxieBox, 20);
-                        ImGui.Unindent();
-                    }
                     
 
                     if (hasChanged) PluginInterface.SavePluginConfig(Config);
 
                     var c = MutexCount();
 
-                    if (c < 2 || Config.Sandboxie) {
+                    if (c < 2) {
                         if (isStarting == false && ImGui.Button("Clone Session")) {
                             CloneSession();
                         }
@@ -234,36 +224,17 @@ namespace CloneSession
                     
                     try {
                         SimpleLog.Log("Starting Dalamud in Cloned Process");
-
-                        Process dalamudInjector;
-                        
-                        if (Config.Sandboxie) {
-                            dalamudInjector = new Process() {
-                                StartInfo = {
-                                    FileName = Config.SandboxiePath,
-                                    WindowStyle = ProcessWindowStyle.Hidden,
-                                    CreateNoWindow = true,
-                                    Arguments = $"{(string.IsNullOrWhiteSpace(Config.SandboxieBox)?"":$"/box:{Config.SandboxieBox} ")}\"{Path.Combine(dalamudPath,"addon","Hooks",dalamudVersion, "Dalamud.Injector.exe")}\" {parameters}",
-                                    WorkingDirectory = Path.Combine(dalamudPath,"addon","Hooks",dalamudVersion),
-                                    RedirectStandardOutput = true,
-                                    RedirectStandardError = true,
-                                }
-                            };
-                        } else {
-                            dalamudInjector = new Process() {
-                                StartInfo = {
-                                    FileName = Path.Combine(dalamudPath,"addon","Hooks",dalamudVersion, "Dalamud.Injector.exe"),
-                                    WindowStyle = ProcessWindowStyle.Hidden,
-                                    CreateNoWindow = true,
-                                    Arguments = $"{parameters}",
-                                    WorkingDirectory = Path.Combine(dalamudPath,"addon","Hooks",dalamudVersion),
-                                    RedirectStandardOutput = true,
-                                    RedirectStandardError = true,
-                                }
-                            };
-                        }
-                        
-                        
+                        var dalamudInjector = new Process() {
+                            StartInfo = {
+                                FileName = Path.Combine(dalamudPath,"addon","Hooks","6c62bb1", "Dalamud.Injector.exe"),
+                                WindowStyle = ProcessWindowStyle.Hidden,
+                                CreateNoWindow = true,
+                                Arguments = $"{parameters}",
+                                WorkingDirectory = Path.Combine(dalamudPath,"addon","Hooks","dev"),
+                                RedirectStandardOutput = true,
+                                RedirectStandardError = true,
+                            }
+                        };
                         dalamudInjector.OutputDataReceived += (sender, args) => { SimpleLog.Log(args.Data); };
                         dalamudInjector.Start();
                         dalamudInjector.WaitForExit();
