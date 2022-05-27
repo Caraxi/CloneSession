@@ -50,11 +50,17 @@ namespace CloneSession
             showConfig = true;
 #endif
 
+            
             if (Config.AutoClone) {
                 if (MutexCount() < 2) {
                     CloneSession();
                 }
             }
+
+            if (Config.FreeMutex) {
+                ClearMutex();
+            }
+            
             
             
         }
@@ -72,6 +78,20 @@ namespace CloneSession
                 }
             }
             return c;
+        }
+
+        public void ClearMutex() {
+            if (Config.FreeMutex && MutexCount() > 0) {
+                foreach (var hi in HandleUtil.GetHandles().Where(t => t.Type == HandleUtil.HandleType.Mutant)) {
+                    if (!string.IsNullOrEmpty(hi.Name) && 
+                        (hi.Name.EndsWith("6AA83AB5-BAC4-4a36-9F66-A309770760CB_ffxiv_game00") || 
+                         hi.Name.EndsWith("6AA83AB5-BAC4-4a36-9F66-A309770760CB_ffxiv_game01"))
+                       ) {
+                        SimpleLog.Log($"Close Mutex: {hi.Name}");
+                        hi.Close();
+                    }
+                }
+            }
         }
         
         private void OnCommand(string command, string args) {
@@ -97,6 +117,7 @@ namespace CloneSession
                     hasChanged |= ImGui.InputTextWithHint("Custom Game Path", GameArguments.GamePath, ref Config.GamePath, 1024);
                     
                     hasChanged |= ImGui.Checkbox("Automatically Clone on Startup", ref Config.AutoClone);
+                    hasChanged |= ImGui.Checkbox("Remove game instance limit", ref Config.FreeMutex);
                     
                     if (ImGui.BeginCombo("Dalamud Stream", Config.SelectedDalamudStream)) {
                         foreach (var s in Config.DalamudStreams) {
@@ -111,6 +132,10 @@ namespace CloneSession
 
                     if (hasChanged) PluginInterface.SavePluginConfig(Config);
 
+                    if (hasChanged) {
+                        ClearMutex();
+                    }
+                    
                     var c = MutexCount();
 
                     if (c < 2) {
@@ -123,6 +148,7 @@ namespace CloneSession
                 }
                 ImGui.End();
             }
+            
         }
 
         private void ToggleConfigUI() {
@@ -162,6 +188,8 @@ namespace CloneSession
         
         private void CloneSession() {
             if (isStarting) return;
+
+            ClearMutex();
 
             isStarting = true;
             try {
@@ -226,11 +254,11 @@ namespace CloneSession
                         SimpleLog.Log("Starting Dalamud in Cloned Process");
                         var dalamudInjector = new Process() {
                             StartInfo = {
-                                FileName = Path.Combine(dalamudPath,"addon","Hooks","6c62bb1", "Dalamud.Injector.exe"),
+                                FileName = Path.Combine(dalamudPath,"addon","Hooks",dalamudVersion, "Dalamud.Injector.exe"),
                                 WindowStyle = ProcessWindowStyle.Hidden,
                                 CreateNoWindow = true,
                                 Arguments = $"{parameters}",
-                                WorkingDirectory = Path.Combine(dalamudPath,"addon","Hooks","dev"),
+                                WorkingDirectory = Path.Combine(dalamudPath,"addon","Hooks",dalamudVersion),
                                 RedirectStandardOutput = true,
                                 RedirectStandardError = true,
                             }

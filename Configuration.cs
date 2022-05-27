@@ -16,6 +16,7 @@ namespace CloneSession
         public string SelectedDalamudStream = "release";
 
         public bool AutoClone = false;
+        public bool FreeMutex = false;
 
     }
 }
